@@ -184,12 +184,16 @@ class HiPotSimulator:
             voltage_data = self.daq.read_data('analog', duration, num_channels=1)
             current_data = self.daq.read_data('analog', duration, num_channels=1)
             
-            # Create DataFrame
-            df = pd.DataFrame({
-                'timestamp': voltage_data['timestamps'],
-                'voltage': voltage_data['data'][0] * 1000,  # Scale to kV
-                'current': current_data['data'][0] * 1000,  # Scale to mA
-            })
+            # Create DataFrame with numpy array data
+            data = []
+            for i in range(len(voltage_data['timestamps'])):
+                data.append({
+                    'timestamp': voltage_data['timestamps'][i],
+                    'voltage': abs(voltage_data['data'][0][i]) * 5.0,  # Scale to kV
+                    'current': abs(current_data['data'][0][i]) * 1.0,  # Scale to mA
+                })
+            
+            df = pd.DataFrame(data)
             
             # Calculate pass/fail based on current threshold
             df['pass_fail'] = (df['current'] < 1.0).astype(int)  # Pass if current < 1mA
