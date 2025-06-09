@@ -327,7 +327,7 @@ def main():
         simulator = BurnInSimulator()
         
         # Generate test data (1 hour duration)
-        data = simulator.generate_test_data(duration=3600)
+        data = simulator.generate_test_data(duration=10)
         
         # Analyze test data
         results = simulator.analyze_test_data(data)

@@ -262,7 +262,7 @@ def main():
         simulator = HiPotSimulator()
         
         # Generate test data (1 minute duration)
-        data = simulator.generate_test_data(duration=60)
+        data = simulator.generate_test_data(duration=10)
         
         # Analyze test data
         results = simulator.analyze_test_data(data)
