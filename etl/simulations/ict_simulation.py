@@ -343,10 +343,23 @@ def main():
         for test_type, stats in results['test_type_stats'].items():
             print(f"\n{test_type.title()} Statistics:")
             print(f"Pass Rate: {stats['pass_rate']*100:.2f}%")
-            print(f"Mean: {stats['mean']:.2f}")
-            print(f"Std: {stats['std']:.2f}")
-            print(f"Min: {stats['min']:.2f}")
-            print(f"Max: {stats['max']:.2f}")
+            
+            # Add appropriate units based on test type
+            if test_type == 'continuity':
+                unit = "Ω"
+            elif test_type == 'resistor':
+                unit = "Ω"
+            elif test_type == 'capacitor':
+                unit = "μF"
+            elif test_type == 'power':
+                unit = "V"
+            else:
+                unit = ""
+            
+            print(f"Mean: {stats['mean']:.2f} {unit}")
+            print(f"Std: {stats['std']:.2f} {unit}")
+            print(f"Min: {stats['min']:.2f} {unit}")
+            print(f"Max: {stats['max']:.2f} {unit}")
         
     except Exception as e:
         logger.error(f"Error in ICT simulation: {str(e)}")

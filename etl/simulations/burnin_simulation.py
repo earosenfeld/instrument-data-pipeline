@@ -82,16 +82,16 @@ class BurnInSimulator:
             fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 12))
             
             # Plot temperature
-            ax1.plot(data['timestamp'], data['temperature'], label='Temperature (C)')
-            ax1.axhline(y=90, color='r', linestyle='--', label='Temperature Limit')
+            ax1.plot(data['timestamp'], data['temperature'], label='Temperature (°C)')
+            ax1.axhline(y=90, color='r', linestyle='--', label='Temperature Limit (90°C)')
             ax1.set_xlabel('Time')
-            ax1.set_ylabel('Temperature (C)')
+            ax1.set_ylabel('Temperature (°C)')
             ax1.set_title('Burn-In Temperature Over Time')
             ax1.legend()
             
             # Plot voltage and current
             ax2.plot(data['timestamp'], data['voltage'], label='Voltage (V)')
-            ax2.axhline(y=3.0, color='r', linestyle='--', label='Voltage Limits')
+            ax2.axhline(y=3.0, color='r', linestyle='--', label='Voltage Limits (3.0-3.6V)')
             ax2.axhline(y=3.6, color='r', linestyle='--')
             ax2.set_xlabel('Time')
             ax2.set_ylabel('Voltage (V)')
@@ -99,7 +99,7 @@ class BurnInSimulator:
             ax2.legend()
             
             ax3.plot(data['timestamp'], data['current'], label='Current (A)')
-            ax3.axhline(y=0.3, color='r', linestyle='--', label='Current Limits')
+            ax3.axhline(y=0.3, color='r', linestyle='--', label='Current Limits (0.3-0.7A)')
             ax3.axhline(y=0.7, color='r', linestyle='--')
             ax3.set_xlabel('Time')
             ax3.set_ylabel('Current (A)')
@@ -133,7 +133,7 @@ class BurnInSimulator:
             ax1.axhline(y=temp_lcl, color='r', linestyle='--', label='LCL')
             ax1.set_title('Temperature X-bar Chart')
             ax1.set_xlabel('Time')
-            ax1.set_ylabel('Temperature (C)')
+            ax1.set_ylabel('Temperature (°C)')
             ax1.legend()
             
             # Plot temperature R chart
@@ -144,7 +144,7 @@ class BurnInSimulator:
             ax2.axhline(y=temp_r.mean() - 3 * temp_r.std(), color='r', linestyle='--', label='LCL')
             ax2.set_title('Temperature R Chart')
             ax2.set_xlabel('Time')
-            ax2.set_ylabel('Range (C)')
+            ax2.set_ylabel('Range (°C)')
             ax2.legend()
             
             plt.tight_layout()
