@@ -200,3 +200,6 @@ reports/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Keep committed README figure assets even though *.png is ignored above
+!assets/*.png

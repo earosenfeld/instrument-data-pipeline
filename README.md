@@ -6,6 +6,62 @@ This repository contains a suite of simulation tools for generating and analyzin
 
 The project simulates data acquisition and analysis for different test types, generating realistic test data, plotting results, and saving statistics and raw data for further analysis. It includes both command-line tools and a web-based dashboard for viewing results.
 
+The analytics layer is built for production / ATE work, not decoration: control limits use the proper Shewhart constants (Montgomery, Appendix VI) rather than naive mean ± 3·std, capability indices distinguish short-term (Cp/Cpk, within-subgroup σ via Rbar/d2) from long-term (Pp/Ppk, overall σ), and run-rule detection returns located Western-Electric / Nelson violations — not just a plotted line.
+
+## Pipeline
+
+```mermaid
+flowchart LR
+    A["Acquisition<br/>(DAQ / SCPI sim)"] --> B["Per-test-type simulation<br/>burn-in · HiPot · isolation<br/>laser · parametric · ICT"]
+    B --> C["Analysis<br/>capability (Cp/Cpk/Pp/Ppk)<br/>SPC run-rules (WE / Nelson)<br/>yield (FPY / DPMO / Pareto)"]
+    C --> D["Outputs<br/>CSV / JSON · SPC charts<br/>Dash dashboard"]
+```
+
+## Visualizations
+
+All figures below are generated from the **real** stats / SPC / yield / distribution API
+(`scripts/make_figures.py`), not hand-drawn — re-run with
+`python scripts/make_figures.py` to regenerate them into `assets/`.
+
+### SPC control chart with run-rule detection
+
+Individuals (I-MR) chart of a burn-in supply-current stream. Center line and 3σ control
+limits come from `etl.spc.imr_chart` (limits derived from MRbar/d2, not mean ± 3·std);
+out-of-control points are flagged in red by `etl.spc.western_electric_rules`, annotated
+with the Western-Electric rule that fired (R1 = beyond 3σ, R2 = 2-of-3 beyond 2σ,
+R4 = 8-in-a-row on one side).
+
+![SPC individuals control chart](assets/spc_chart.png)
+
+### Process capability
+
+Parametric supply-voltage population with LSL/USL, a fitted normal overlay, and the
+Cp / Cpk / Pp / Ppk indices reported straight from `etl.stats.capability_from_values`
+(short-term via within-subgroup σ, long-term via overall σ).
+
+![Process capability histogram](assets/capability_histogram.png)
+
+### Pareto of failure modes
+
+Reject-bin failure modes ranked descending with the cumulative-percent line on a twin
+axis (the classic "vital few" 80% cut), built from `etl.yield_analysis.pareto_failure_modes`.
+
+![Pareto of failure modes](assets/pareto.png)
+
+### Leakage-current distribution
+
+HiPot leakage-current population from `etl.distributions.lognormal_leakage` — a strictly
+positive log-normal spanning decades (log x-axis) with a rare dielectric-breakdown tail.
+The one-sided spec limit is marked and the failing tail shaded red.
+
+![Leakage-current log-normal distribution](assets/leakage_distribution.png)
+
+### Live dashboard
+
+For interactive exploration, `simple_dashboard.py` serves a [Dash](https://dash.plotly.com/)
+app (auto-selects a free port from 8050) with a test-type selector, summary pass/fail
+stats, interactive time-series plots, raw-data tables, and the generated PNG plots.
+
 ## Installation
 
 1. Clone the repository:
