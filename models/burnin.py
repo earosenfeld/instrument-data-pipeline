@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+from models import Base
+
 
 class BurnInZeroCurrent(Base):
     __tablename__ = 'burnin_zero_current'

@@ -3,18 +3,26 @@ import pandas as pd
 from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models.burnin import BurnInZeroCurrent, Base
-from models.ict import ICTData
-from models.parametric import ParametricData
-from models.laser import LaserProfile
-from models.hipot import HiPotData
-from models.isolation import IsolationResistance
 
-# Fixture for setting up an in-memory SQLite database
-@pytest.fixture(scope='module')
+# Importing the package registers EVERY model on the single shared Base, so
+# create_all() below builds all six tables (not just one).
+from models import (
+    Base,
+    BurnInZeroCurrent,
+    ICTData,
+    ParametricData,
+    LaserProfile,
+    HiPotData,
+    IsolationResistance,
+)
+
+
+# Fixture for setting up an in-memory SQLite database. Function scope gives each
+# test a clean database so ingest tests do not see each other's rows.
+@pytest.fixture(scope='function')
 def in_memory_db():
     engine = create_engine('sqlite:///:memory:')
-    Base.metadata.create_all(engine)  # Create tables
+    Base.metadata.create_all(engine)  # Create ALL tables
     Session = sessionmaker(bind=engine)
     session = Session()
     yield session

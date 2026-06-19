@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
-from sqlalchemy.orm import declarative_base
 
-Base = declarative_base()
+from models import Base
+
 
 class ICTData(Base):
     __tablename__ = 'ict_data'

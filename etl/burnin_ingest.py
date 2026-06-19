@@ -18,14 +18,20 @@ def ingest_burnin_zero_current_data(file_path: str, session: Session) -> None:
     try:
         # Load the data
         df = load_data(file_path)
-        
+
         # Normalize the data
         normalized_df = normalize_data(df)
-        
-        # Ensure data types are correct
-        normalized_df['id'] = normalized_df['id'].astype(int)
+
+        # Empty input is valid: nothing to ingest, no error.
+        if normalized_df.empty:
+            logger.info("No rows to ingest from %s (empty file).", file_path)
+            return
+
+        # Ensure data types are correct. A malformed file (non-numeric value or
+        # ragged rows producing NaN) raises here, which callers expect.
         normalized_df['value'] = normalized_df['value'].astype(float)
-        
+        normalized_df['id'] = normalized_df['id'].astype(int)
+
         # Convert DataFrame to list of BurnInZeroCurrent objects
         burnin_zero_current_objects = [
             BurnInZeroCurrent(
