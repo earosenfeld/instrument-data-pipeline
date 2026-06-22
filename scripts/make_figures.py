@@ -40,6 +40,11 @@ ASSETS = ROOT / "assets"
 ASSETS.mkdir(exist_ok=True)
 
 from etl.spc import imr_chart, western_electric_rules  # noqa: E402
+from etl.advanced_spc import (  # noqa: E402
+    ewma_chart,
+    cusum_chart,
+    shewhart_individuals_signals,
+)
 from etl.stats import capability_from_values  # noqa: E402
 from etl.yield_analysis import pareto_failure_modes  # noqa: E402
 from etl.distributions import (  # noqa: E402
@@ -146,6 +151,120 @@ def make_spc_chart():
                       edgecolor=PALETTE[1], linewidth=0.7, alpha=0.95))
     _annotate(fig, "etl.spc.imr_chart + western_electric_rules")
     out = ASSETS / "spc_chart.png"
+    fig.savefig(out)
+    plt.close(fig)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 1b. Small-shift detection: a slow burn-in drift that a Shewhart 3-sigma chart
+#     is deaf to, caught by EWMA and CUSUM. Three stacked panels share the same
+#     1-sigma-shifted supply-current stream so the contrast is direct.
+# ---------------------------------------------------------------------------
+def make_ewma_cusum_chart():
+    rng = np.random.default_rng(0)
+    # Burn-in supply current (A): in control at 0.500 +/- 0.006, then a small,
+    # sustained ~1-sigma degradation from sample 30 onward (a creeping drift, not
+    # a spike). target/sigma are the KNOWN Phase-I baseline.
+    n = 60
+    shift_idx = 30
+    target, sigma = 0.500, 0.006
+    series = rng.normal(target, sigma, n)
+    series[shift_idx:] += 1.0 * sigma  # 1-sigma sustained shift
+
+    x = np.arange(1, n + 1)
+
+    # --- Real analysis API: all three charts on the known parameters. ---
+    shew = shewhart_individuals_signals(series, target=target, sigma=sigma, L=3.0)
+    ew = ewma_chart(series, lam=0.2, L=3.0, target=target, sigma=sigma)
+    cu = cusum_chart(series, target=target, sigma=sigma, k=0.5, h=5.0)
+    ewma_det = min(ew.signals) if ew.signals else None
+    cusum_det = min(cu.signals) if cu.signals else None
+
+    fig, (ax0, ax1, ax2) = plt.subplots(
+        3, 1, figsize=(9.6, 9.4), sharex=True,
+        gridspec_kw={"hspace": 0.18},
+    )
+
+    def _mark_shift(ax):
+        ax.axvline(shift_idx + 1, color="#94a3b8", lw=1.2, ls=":", zorder=1)
+
+    # ---- Panel 1: raw data with Shewhart 3-sigma limits (drift NOT caught) ----
+    ucl, lcl = target + 3 * sigma, target - 3 * sigma
+    ax0.plot(x, series, color=PALETTE[0], marker="o", markersize=4.5,
+             markerfacecolor="white", markeredgecolor=PALETTE[0],
+             markeredgewidth=1.3, zorder=3, label="Supply current")
+    ax0.axhline(target, color="#334155", lw=1.3, zorder=2)
+    ax0.axhline(ucl, color=PALETTE[1], lw=1.2, ls="--", zorder=2)
+    ax0.axhline(lcl, color=PALETTE[1], lw=1.2, ls="--", zorder=2)
+    _mark_shift(ax0)
+    ax0.text(shift_idx + 1.4, lcl, "drift starts", color="#64748b",
+             fontsize=8.5, va="bottom", ha="left")
+    ax0.text(n + 0.5, ucl, "UCL 3$\\sigma$", color=PALETTE[1], va="center",
+             fontsize=8.5, fontweight="bold")
+    ax0.text(n + 0.5, lcl, "LCL 3$\\sigma$", color=PALETTE[1], va="center",
+             fontsize=8.5, fontweight="bold")
+    if shew:
+        ax0.scatter([x[i] for i in shew], [series[i] for i in shew], s=110,
+                    color=PALETTE[1], zorder=5, edgecolor="white", linewidth=1.2)
+    shew_txt = ("no point beyond 3$\\sigma$ -> drift MISSED"
+                if not shew else f"{len(shew)} pt(s) flagged")
+    ax0.set_title("Shewhart 3$\\sigma$ Individuals — small drift slips through")
+    ax0.set_ylabel("Supply current (A)")
+    ax0.set_xlim(0.3, n + 6)
+    ax0.text(0.015, 0.05, shew_txt, transform=ax0.transAxes, fontsize=9,
+             color=PALETTE[1], va="bottom", ha="left", fontweight="bold",
+             bbox=dict(boxstyle="round,pad=0.35", facecolor="#fef2f2",
+                       edgecolor=PALETTE[1], linewidth=0.7, alpha=0.95))
+    ax0.legend(loc="upper left", fontsize=9)
+
+    # ---- Panel 2: EWMA with time-varying limits (catches it). ----
+    ax1.plot(x, ew.ewma, color=PALETTE[4], marker="o", markersize=4,
+             markerfacecolor="white", markeredgecolor=PALETTE[4],
+             markeredgewidth=1.2, zorder=3, label="EWMA ($\\lambda$=0.2)")
+    ax1.axhline(ew.target, color="#334155", lw=1.3, zorder=2)
+    ax1.plot(x, ew.upper, color=PALETTE[1], lw=1.2, ls="--", zorder=2,
+             label="EWMA limits ($L$=3)")
+    ax1.plot(x, ew.lower, color=PALETTE[1], lw=1.2, ls="--", zorder=2)
+    _mark_shift(ax1)
+    if ewma_det is not None:
+        ax1.scatter([x[ewma_det]], [ew.ewma[ewma_det]], s=150, color=PALETTE[1],
+                    zorder=6, edgecolor="white", linewidth=1.4)
+        ax1.annotate(f"detect @ {ewma_det + 1}\n(+{ewma_det - shift_idx} after shift)",
+                     (x[ewma_det], ew.ewma[ewma_det]), textcoords="offset points",
+                     xytext=(10, -2), fontsize=9, fontweight="bold",
+                     color=PALETTE[1], va="center",
+                     arrowprops=dict(arrowstyle="->", color=PALETTE[1], lw=1.2))
+    ax1.set_title("EWMA — small drift caught (limits widen to steady state)")
+    ax1.set_ylabel("EWMA statistic (A)")
+    ax1.legend(loc="upper left", fontsize=9)
+
+    # ---- Panel 3: CUSUM tabular sums vs decision interval (catches it). ----
+    ax2.plot(x, cu.c_plus, color=PALETTE[2], marker="o", markersize=4,
+             markerfacecolor="white", markeredgecolor=PALETTE[2],
+             markeredgewidth=1.2, zorder=3, label="$C^{+}$ (upper sum)")
+    ax2.plot(x, cu.c_minus, color=PALETTE[3], marker="s", markersize=3.5,
+             markerfacecolor="white", markeredgecolor=PALETTE[3],
+             markeredgewidth=1.2, zorder=3, label="$C^{-}$ (lower sum)")
+    ax2.axhline(cu.limit, color=PALETTE[1], lw=1.3, ls="--", zorder=2)
+    ax2.text(n + 0.5, cu.limit, f"$H$ = {cu.h:g}$\\sigma$", color=PALETTE[1],
+             va="center", fontsize=8.5, fontweight="bold")
+    _mark_shift(ax2)
+    if cusum_det is not None:
+        ax2.scatter([x[cusum_det]], [cu.c_plus[cusum_det]], s=150,
+                    color=PALETTE[1], zorder=6, edgecolor="white", linewidth=1.4)
+        ax2.annotate(f"detect @ {cusum_det + 1}\n(+{cusum_det - shift_idx} after shift)",
+                     (x[cusum_det], cu.c_plus[cusum_det]),
+                     textcoords="offset points", xytext=(10, 4), fontsize=9,
+                     fontweight="bold", color=PALETTE[1], va="bottom",
+                     arrowprops=dict(arrowstyle="->", color=PALETTE[1], lw=1.2))
+    ax2.set_title("CUSUM — small drift caught ($k$=0.5$\\sigma$, $H$=5$\\sigma$)")
+    ax2.set_ylabel("Cumulative sum (A)")
+    ax2.set_xlabel("Sample (unit order)")
+    ax2.legend(loc="upper left", fontsize=9)
+
+    _annotate(fig, "etl.advanced_spc.ewma_chart + cusum_chart")
+    out = ASSETS / "ewma_cusum.png"
     fig.savefig(out)
     plt.close(fig)
     return out
@@ -311,6 +430,7 @@ def make_leakage_distribution():
 def main():
     figures = [
         make_spc_chart(),
+        make_ewma_cusum_chart(),
         make_capability_histogram(),
         make_pareto(),
         make_leakage_distribution(),

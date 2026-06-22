@@ -33,6 +33,33 @@ R4 = 8-in-a-row on one side).
 
 ![SPC individuals control chart](assets/spc_chart.png)
 
+### Small-shift detection (EWMA & CUSUM)
+
+A Shewhart 3σ chart only reacts to a single point landing beyond its limits, so it is
+deliberately deaf to a small *sustained* drift — a 0.5–1σ offset (slow burn-in
+degradation, a creeping bias, a warming fixture) keeps every individual reading inside
+±3σ yet shifts the whole stream. `etl.advanced_spc` adds the two charts purpose-built for
+that regime, both of which accumulate evidence across consecutive points instead of
+judging each one in isolation:
+
+- **EWMA** (`ewma_chart`) — exponentially weighted moving average
+  `zᵢ = λ·xᵢ + (1−λ)·zᵢ₋₁` (here λ=0.2), with *time-varying* control limits
+  `target ± L·σ·√( (λ/(2−λ))·(1−(1−λ)^{2i}) )` that flare out from the target and settle
+  at the steady-state half-width `L·σ·√(λ/(2−λ))`.
+- **CUSUM** (`cusum_chart`) — tabular two-sided cumulative sum
+  `C⁺ᵢ = max(0, C⁺ᵢ₋₁ + (xᵢ − (target + kσ)))` and
+  `C⁻ᵢ = max(0, C⁻ᵢ₋₁ + ((target − kσ) − xᵢ))`, flagged when either crosses the decision
+  interval `H = h·σ` (here k=0.5σ, h=5σ — the canonical 1σ-shift design).
+
+In the figure below all three charts watch the **same** burn-in supply-current stream with
+a 1σ drift injected at sample 30. The Shewhart 3σ chart (top) never alarms — no point
+reaches 3σ. EWMA (middle) and CUSUM (bottom) both flag the drift ~9 samples later. The
+EWMA limits visibly widen to their steady-state value; the CUSUM `C⁺` ramps past `H` while
+`C⁻` stays near zero. A Monte-Carlo `average_run_length` helper and an ANOVA Gage R&R
+(`gage_rr`, %GRR / ndc) measurement-systems-analysis routine round out the module.
+
+![EWMA and CUSUM small-shift detection](assets/ewma_cusum.png)
+
 ### Process capability
 
 Parametric supply-voltage population with LSL/USL, a fitted normal overlay, and the
