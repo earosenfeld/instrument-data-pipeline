@@ -3,7 +3,7 @@ from etl.burnin_ingest import ingest_burnin_zero_current_data
 from models.burnin import BurnInZeroCurrent
 
 
-def test_ingest_burnin_zero_current_data(in_memory_db):
+def test_ingest_burnin_zero_current_data(in_memory_db, tmp_path):
     # Ingest the sample data.
     ingest_burnin_zero_current_data('data/raw/burnin/sample_burnin.csv', in_memory_db)
 
@@ -18,11 +18,15 @@ def test_ingest_burnin_zero_current_data(in_memory_db):
         assert record.description.startswith("Burn-in Test")
 
     # Empty file: ingests zero rows without error.
+    empty_csv = tmp_path / "empty.csv"
+    empty_csv.write_text("id,value\n")
     before = in_memory_db.query(BurnInZeroCurrent).count()
-    ingest_burnin_zero_current_data('data/raw/burnin/empty.csv', in_memory_db)
+    ingest_burnin_zero_current_data(str(empty_csv), in_memory_db)
     after = in_memory_db.query(BurnInZeroCurrent).count()
     assert after == before, "No data should be ingested from an empty file"
 
     # Malformed file: non-numeric / ragged rows must raise.
+    malformed_csv = tmp_path / "malformed.csv"
+    malformed_csv.write_text("id,value\n1,not-a-number\n2,3.5,extra\n")
     with pytest.raises(Exception):
-        ingest_burnin_zero_current_data('data/raw/burnin/malformed.csv', in_memory_db)
+        ingest_burnin_zero_current_data(str(malformed_csv), in_memory_db)
