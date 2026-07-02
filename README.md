@@ -8,6 +8,12 @@ This repository contains a suite of simulation tools for generating and analyzin
 
 The project simulates data acquisition and analysis for different test types, generating realistic test data, plotting results, and saving statistics and raw data for further analysis. It includes both command-line tools and a web-based dashboard for viewing results.
 
+**Highlights**
+
+- **STDF V4 writer** (`etl/stdf_writer.py`) — emits genuine binary STDF (FAR/MIR/PIR/PTR/PRR records per the spec) from any parametric result set, with a record-header reader for round-trip verification. This is the interchange format real ATE (Teradyne/Advantest) tooling consumes.
+- **SPC engine** (`etl/spc.py`, `etl/advanced_spc.py`) — I-MR/Xbar-R charts with proper Shewhart constants, EWMA/CUSUM small-shift detection, located Western-Electric/Nelson rule violations, Gage R&R.
+- **Yield analytics** (`etl/yield_analysis.py`) — FPY, DPMO→sigma, Pareto.
+
 The analytics layer is built for production / ATE work, not decoration: control limits use the proper Shewhart constants (Montgomery, Appendix VI) rather than naive mean ± 3·std, capability indices distinguish short-term (Cp/Cpk, within-subgroup σ via Rbar/d2) from long-term (Pp/Ppk, overall σ), and run-rule detection returns located Western-Electric / Nelson violations — not just a plotted line.
 
 ## Pipeline
