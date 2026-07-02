@@ -1,5 +1,7 @@
 # Instrument Data Pipeline
 
+[![CI](https://github.com/earosenfeld/instrument-data-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/earosenfeld/instrument-data-pipeline/actions/workflows/ci.yml)
+
 This repository contains a suite of simulation tools for generating and analyzing test data for various electronic component tests, including burn-in, HiPot, isolation resistance, laser profile, parametric, and in-circuit tests.
 
 ## Overview
@@ -85,7 +87,7 @@ The one-sided spec limit is marked and the failing tail shaded red.
 
 ### Live dashboard
 
-For interactive exploration, `simple_dashboard.py` serves a [Dash](https://dash.plotly.com/)
+For interactive exploration, `python start_dashboard.py` serves a [Dash](https://dash.plotly.com/)
 app (auto-selects a free port from 8050) with a test-type selector, summary pass/fail
 stats, interactive time-series plots, raw-data tables, and the generated PNG plots.
 
@@ -148,7 +150,7 @@ This will:
 After running tests, you can view results in an interactive web dashboard:
 
 ```bash
-python simple_dashboard.py
+python start_dashboard.py
 ```
 
 The dashboard will:
@@ -210,7 +212,7 @@ This provides an interactive menu to:
 
 3. **View results in web dashboard:**
    ```bash
-   python simple_dashboard.py
+   python start_dashboard.py
    ```
 
 4. **Explore data:**
