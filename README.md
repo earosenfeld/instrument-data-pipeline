@@ -93,6 +93,8 @@ The one-sided spec limit is marked and the failing tail shaded red.
 
 ### Live dashboard
 
+![Dash dashboard: burn-in test summary with stats cards and SPC/time-series/raw-data tabs](assets/dashboard.png)
+
 For interactive exploration, `python start_dashboard.py` serves a [Dash](https://dash.plotly.com/)
 app (auto-selects a free port from 8050) with a test-type selector, summary pass/fail
 stats, interactive time-series plots, raw-data tables, and the generated PNG plots.
